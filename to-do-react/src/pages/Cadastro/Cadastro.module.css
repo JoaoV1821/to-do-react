@@ -1,0 +1,45 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.error {
+    color: red;
+    font-size: small;
+}
+
+.succsess {
+    color: green;
+    font-size: small;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    margin-left: 25%;
+
+}
+
+.field {
+    margin-bottom: 10px;
+}
+
+.fieldset {
+    width: 30%;
+    height: 100%;
+    margin-left: 34%;
+    margin-top: 3%;
+}
+
+button {
+    margin-top: 2%;
+}
+
+input {
+    border-radius: 10px;
+    height: 20px;
+    width: 200px;
+}
