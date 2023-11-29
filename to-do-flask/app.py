@@ -106,5 +106,35 @@ def listTodo(email):
         except Exception as Error:
             return jsonify({"status": "error", "message": f"{Error}"}), 500
 
+
+@app.route('/todo/<id>', methods=['DELETE'])
+def deleteTodo(id):
+    if request.method == 'DELETE':
+        try:
+            cursor = mysql.connection.cursor()
+            query = "DELETE from tasks WHERE id = '%s'" % id
+            cursor.execute(query)
+            mysql.connection.commit()
+            return jsonify({"status":"succes","message":"Deletado com Sucesso!"})
+        except Exception as Error:
+            return jsonify({"status": "error", "message": f"{Error}"}), 500
+   
+        
+@app.route('/todo/<id>', methods=['PUT'])
+def updateTodo(id):
+    if request.method == 'PUT':
+        try:
+            status = request.form.get('status')
+            email = request.form.get('email')
+            cursor = mysql.connection.cursor()
+            query = "UPDATE tasks SET status='%s' WHERE id='%s' and email_user LIKE '%s' " % (status, id, email)
+            cursor.execute(query)
+            mysql.connection.commit()
+            return jsonify({"status":"succes","message":"Atualizado com Sucesso!"})
+        except Exception as Error:
+            return jsonify({"status": "error", "message": f"{Error}"}), 500
+        
+         
+
 if __name__ == "__main__":
     app.run(debug=True)

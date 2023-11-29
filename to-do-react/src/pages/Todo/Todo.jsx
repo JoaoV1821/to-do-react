@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import Style from './Todo.module.css'
+import { getTasks } from '../../services/API';
+import { postTodo } from '../../services/API';
+import { deleteTask } from '../../services/API';
+import { updateStatus } from '../../services/API';
 
 const Todo = () => {
   const Cards = (props) => {
@@ -22,134 +26,132 @@ const Todo = () => {
     );
   };
 
-  const tasks = [
-    {
-      id: 1,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 1',
-      status: 'pending',
-    },
-   
-    {
-      id: 2,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 2',
-      status: 'pending',
-    },
-   
-    {
-      id: 3,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 3',
-      status: 'pending'
-    },
-
-    {
-      id: 4,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 4',
-      status: 'doing'
-    },
-
-    {
-      id: 5,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 5',
-      status: 'doing'
-    },
-
-    {
-      id: 6,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 6',
-      status: 'doing'
-    },
-
-    {
-      id: 7,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 7',
-      status: "done"
-    },
-
-    {
-      id: 8,
-      title: 'Buy groceries',
-      descricao: 'Tarefa 8',
-      status: 'done'
-    },
-
-    {
-      id: 9,
-      title: 'Buy gros',
-      descricao: 'Tarefa 9',
-      status: "done"
-    }
-  ]
-
- 
-
+  
   const [input, setInput] = useState('');
-  const [t, setTasks] = useState([])
+  const [tasks, setTasks] = useState([])
+  const [newTasks, setNewTasks] = useState([]);
 
-  const pending = t.filter((task) => task.status === 'pending');
-  const doing = t.filter((task) => task.status === 'doing');
-  const done = t.filter((task) => task.status === 'done');
+  const pending = tasks.filter((task) => task.status === 'pending');
+  const doing = tasks.filter((task) => task.status === 'doing');
+  const done = tasks.filter((task) => task.status === 'done');
+
+
+  const handleGetTasks = async () => {
+    console.log(localStorage.getItem('email'))
+    await getTasks(localStorage.getItem('email')).then((response) => {
+      setTasks(response['tasks']);
+    }).catch((error) => {
+      console.log(error.message);
+    })
+
+  }
+
+
+  const handleDelete = async (id) => {
+      await deleteTask(id).then((response) => {
+        console.log(response)
+      }).catch((error) => {
+        console.log(error.message);
+      })
+  }
 
 
   const handleSetvalue = (value) => {
       setInput(value)
   }
 
-  const handleFillTasks = () => {
-    setTasks(tasks)
-    console.log(t)
-  
-  }
 
   const handleDeleteTask = (taskId) => {
     setTasks((prevTasks) =>
       prevTasks.filter((task) => task.id !== taskId)
     );
+    handleDelete(taskId);
   };
+
 
   const handleAddTask = () => {
     if (input === '' || input === null) {
       alert('Digite um valor!');
     } else {
       const task = {
-        id: tasks.length + 1,
-        title: input,
+        email: localStorage.getItem('email'),
         descricao: input,
         status: 'pending',
       };
   
       setTasks((prevTasks) => [...prevTasks, task]);
+      handleSaveTask(task)
     }
   };
+
+
+  const handleSaveTask =  async (task) => {
+    await postTodo(task).then((response) => {
+      console.log(response)
+    }).catch((error) => {
+      console.log(error.message);
+    })
+  }
+
+
+  const handleSetStatus = async (object) => {
+      await updateStatus(object).then((response) => {
+         console.log(response);
+      }).catch((error) => {
+        console.log(error.message);
+      })
+  }
+ 
+  const handleAction = async (taskId) => {
+    const object = {
+      email: localStorage.getItem('email'),
+      id: taskId,
+      status: '',
+    };
   
-  const handleAction = (taskId) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status:
-                task.status === 'pending'
-                  ? 'doing'
-                  : task.status === 'doing'
-                  ? 'done'
-                  : 'pending',
-            }
-          : task
-      )
-    );
+    setTasks((prevTasks) => {
+      const updatedTasks = prevTasks.map((task) => {
+        if (task.id === taskId) {
+          let updatedStatus;
+  
+          switch (task.status) {
+            case 'pending':
+              updatedStatus = 'doing';
+              break;
+            case 'doing':
+              updatedStatus = 'done';
+              break;
+            case 'done':
+              updatedStatus = 'pending';
+              break;
+          }
+  
+          object.status = updatedStatus;
+  
+          // Atualizar o status da tarefa via API
+          handleSetStatus(object).then((response) => {
+            console.log(response);
+          }).catch((error) => {
+            console.log(error.message);
+          });
+  
+          // Atualizar o status da tarefa no estado local
+          return {
+            ...task,
+            status: updatedStatus,
+          };
+        }
+  
+        return task;
+      });
+  
+      return updatedTasks;
+    });
   };
   
 
   useEffect(() => {
-    handleFillTasks()
-    console.log(localStorage.getItem('email'))
+    handleGetTasks()
   }, [])
   
 
@@ -159,7 +161,7 @@ const Todo = () => {
         <h2>To do List</h2>
         <input type="text" placeholder='Enter a task'className={Style.input} onChange={(value) => handleSetvalue(value.target.value)} />
         <button onClick={() => handleAddTask()}>Add Todo</button>
-        <button onClick={() => handleAddTask()}>Save</button>
+
       </section>
         
 
@@ -179,8 +181,6 @@ const Todo = () => {
                      
                      />)
                   }) 
-                
-              
                 }
             </section>
 

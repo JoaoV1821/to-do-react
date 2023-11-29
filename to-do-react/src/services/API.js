@@ -5,6 +5,7 @@ const instance = axios.create({
     headers: {'content-type': 'application/x-www-form-urlencoded'}
 })
 
+
 export const postUser = async (object) => {
     await instance.post('/cadastro', 
     {
@@ -20,8 +21,8 @@ export const postUser = async (object) => {
     })
 }
 
-export const login = async (object) => {
 
+export const login = async (object) => {
     const response = await instance.post('/login', 
     
     {
@@ -32,4 +33,40 @@ export const login = async (object) => {
 
     console.log(response.data);
 
+}
+
+export const postTodo = async (object) => {
+    const response = await instance.post('/todo/post', 
+        {
+            "email": object.email,
+            "descricao": object.descricao,
+            "status" : object.status
+
+        }    
+    )
+
+    console.log(response)
+}
+
+export const getTasks = async (email) => {
+    const response = await instance.get(`todo/${email}`);
+
+    console.log(response.data);
+    return response.data;
+}
+
+
+export const deleteTask = async (id) => {
+    const response = await instance.delete(`todo/${id}`)
+    console.log(response)
+}
+
+
+export const updateStatus = async (object) => {
+    const response = await instance.put(`todo/${object.id}`,{
+        "email": object.email,
+        "status": object.status
+    })
+
+    console.log(response);
 }
