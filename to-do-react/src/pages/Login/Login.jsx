@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useState, useEffect} from 'react'
 import Style from './Login.module.css'
 import { login } from '../../services/API';
 
@@ -55,6 +55,11 @@ const Login = () => {
         setError(`${error.message}`);
     }  
    }
+
+   useEffect(() => {
+      setEmail('')
+   }, [])
+   
  
   return ( 
     <div className={Style.container}>

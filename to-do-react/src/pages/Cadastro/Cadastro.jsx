@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Style from "./Cadastro.module.css"
 import { postUser } from '../../services/API';
 
@@ -62,6 +62,11 @@ const Cadastro = () => {
  const handleSetNome = (value) => {
    setNome(value.target.value)
  }
+
+
+ useEffect(() => {
+  setEmail('')
+}, [])
 
   return (
     <div className={Style.container}>
