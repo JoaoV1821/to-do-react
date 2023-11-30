@@ -2,8 +2,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mysqldb import MySQL
 from models import  User, Task
+from queue import Queue
+from threading import Thread
+
+task_queue = Queue()
 
 app = Flask(__name__)
+
+app.app_context().push()
 
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -29,6 +35,7 @@ def cadastrar_usuario():
 
         try:
             cursor = mysql.connection.cursor()
+            print(cursor)
             cursor.execute(f"""INSERT INTO USERS VALUES('{user.nome[0]}', '{user.email[0]}', '{user.senha}')""")
             mysql.connection.commit()
             cursor.close()
@@ -59,6 +66,29 @@ def login():
         
         
 
+def process_task_queue():
+    with app.app_context():
+        while True:
+            task = task_queue.get()
+            if task:
+                try:
+                    cursor = mysql.connection.cursor()
+                    cursor.execute('SET FOREIGN_KEY_CHECKS=0')
+
+                    insert_query = "INSERT INTO tasks (email_user, descricao, status) VALUES (%s, %s, %s)"
+                    insert_values = (task.user_email, task.descricao, task.status)
+
+                    cursor.execute(insert_query, insert_values)
+
+                    mysql.connection.commit()
+                    cursor.close()
+                except Exception as Error:
+                    print(f"Erro ao processar tarefa: {Error}")
+
+# Iniciar a thread para processar a fila de tarefas
+
+Thread(target=process_task_queue, daemon=True).start()
+
 @app.route('/todo/post', methods=['POST'])
 def todo():
     if request.method == 'POST':
@@ -68,25 +98,11 @@ def todo():
         
         task = Task(email, descricao, status)
         
-        try:
-            cursor = mysql.connection.cursor()
-            print(task.user_email, task.descricao, task.status)
-            cursor.execute('SET FOREIGN_KEY_CHECKS=0')
+        # Adicionar a tarefa à fila para processamento assíncrono
+        with app.app_context():
+            task_queue.put(task)
 
-            insert_query = "INSERT INTO tasks (email_user, descricao, status) VALUES (%s, %s, %s)"
-            insert_values = (task.user_email, task.descricao, task.status)
-
-            cursor.execute(insert_query, insert_values)
-
-            mysql.connection.commit()
-            
-            cursor.close()
-
-        
-            return jsonify({"status": "success", "message": "Tarefa cadastrada com sucesso!"})
-        except Exception as Error:
-            return jsonify({"status": "error", "message": f"{Error}"}), 500
-        
+        return jsonify({"status": "success", "message": "Tarefa cadastrada com sucesso!"})
         
 @app.route('/todo/<email>', methods=['GET'])
 def listTodo(email):
